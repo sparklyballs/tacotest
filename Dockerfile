@@ -1,5 +1,5 @@
 ARG UBUNTU_VER="focal"
-FROM ubuntu:${UBUNTU_VER} as packages
+FROM ubuntu:${UBUNTU_VER}
 
 # build arguments
 ARG DEBIAN_FRONTEND=noninteractive
@@ -7,17 +7,17 @@ ARG RELEASE
 
 # environment variables
 ENV \
-	keys="generate" \
-	harvester="false" \
-	farmer="false" \
-	plots_dir="/plots" \
 	farmer_address="null" \
+	farmer="false" \
 	farmer_port="null" \
-	testnet="false" \
 	full_node_port="null" \
+	harvester="false" \
+	keys="generate" \
+	plots_dir="/plots" \
+	testnet="false" \
 	TZ="UTC"
 
-# set workdir 
+# set workdir for build stage
 WORKDIR /taco-blockchain
 
 # install dependencies
@@ -25,14 +25,28 @@ RUN \
 	apt-get update \
 	&& apt-get install -y \
 	--no-install-recommends \
+		acl \
 		bc \
 		ca-certificates \
 		curl \
 		git \
 		jq \
 		lsb-release \
+		openssl \
+		python3 \
 		sudo \
+		tar \
+		tzdata \
+		unzip \
+	\
+# set timezone
+	\
+	&& ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime \
+	&& echo "$TZ" > /etc/timezone \
+	&& dpkg-reconfigure -f noninteractive tzdata \
+	\
 # cleanup
+	\
 	&& rm -rf \
 		/tmp/* \
 		/var/lib/apt/lists/* \
@@ -51,14 +65,18 @@ RUN \
 	&& git clone https://github.com/Taco-Network/taco-blockchain.git \
 		/taco-blockchain \		
 	&& git checkout "${RELEASE}" \
-	&& git submodule update --init \
-	&& sh install.sh \
-# cleanup
-	&& rm -rf \
-		/tmp/* \
-		/var/lib/apt/lists/* \
-		/var/tmp/*
+	&& git submodule update --init mozilla-ca \
+	&& sh install.sh
 
-# add local files
-COPY ./entrypoint.sh entrypoint.sh
-ENTRYPOINT ["bash", "./entrypoint.sh"]
+# set additional runtime environment variables
+ENV \
+	PATH=/taco-blockchain/venv/bin:$PATH \
+	CONFIG_ROOT=/root/.taco/mainnet
+
+# copy local files
+COPY docker-*.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-*.sh
+
+# entrypoint
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["docker-start.sh"]
