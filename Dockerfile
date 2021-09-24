@@ -17,9 +17,6 @@ ENV \
 	testnet="false" \
 	TZ="UTC"
 
-# set workdir for build stage
-WORKDIR /taco-blockchain
-
 # install dependencies
 RUN \
 	apt-get update \
@@ -52,6 +49,9 @@ RUN \
 		/var/lib/apt/lists/* \
 		/var/tmp/*
 
+# set workdir for build stage
+WORKDIR /taco-blockchain
+
 # set shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -66,7 +66,15 @@ RUN \
 		/taco-blockchain \		
 	&& git checkout "${RELEASE}" \
 	&& git submodule update --init mozilla-ca \
-	&& sh install.sh
+	&& sh install.sh \
+	\
+# cleanup
+	\
+	&& rm -rf \
+		/root/.cache \
+		/tmp/* \
+		/var/lib/apt/lists/* \
+		/var/tmp/*
 
 # set additional runtime environment variables
 ENV \
