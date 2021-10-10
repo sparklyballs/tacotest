@@ -11,8 +11,7 @@ cd /taco-blockchain || exit 1
 # shellcheck disable=SC1091
 . ./activate
 
-taco init
-# taco init --fix-ssl-permissions
+taco init --fix-ssl-permissions
 
 if [[ ${testnet} == 'true' ]]; then
    echo "configure testnet"
